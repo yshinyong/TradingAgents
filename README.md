@@ -178,6 +178,7 @@ TradingAgents works with any market Yahoo Finance covers, using the exchange-suf
 - Hong Kong: `0700.HK` · Tokyo: `7203.T` · London: `AZN.L`
 - India: `RELIANCE.NS`, `.BO` · Canada: `.TO` · Australia: `.AX`
 - China A-shares: Shanghai `.SS`, Shenzhen `.SZ` (e.g. `600519.SS` for Kweichow Moutai)
+- Malaysia (Bursa/KLSE): `.KL` (e.g. `1155.KL` for Malayan Banking / Maybank)
 - Crypto: `BTC-USD`, `ETH-USD`
 
 <p align="center">
@@ -193,6 +194,37 @@ An interface will appear showing results as they load, letting you track the age
 <p align="center">
   <img src="assets/cli/cli_transaction.png" width="100%" style="display: inline-block; margin: 0 2%;">
 </p>
+
+## Bursa Malaysia (KLSE) customizations
+
+> This section documents fork-specific additions on the `bursa` branch, kept
+> separate from `main` (a clean mirror of [upstream](https://github.com/TauricResearch/TradingAgents))
+> so upstream updates keep merging cleanly.
+
+Reddit and StockTwits — the sentiment analyst's default social sources — carry
+almost no discussion of Bursa-listed names, and Malaysia's usual retail
+sources (i3investor, klsescreener) sit behind client-side rendering or
+Cloudflare bot-protection that blocks a plain HTTP fetcher. Rather than build
+a fragile scraper, this fork adds what's realistically scrapeable and lets
+the existing graceful-degradation behavior handle the rest:
+
+- **Regional alpha benchmark**: `.KL` tickers now resolve to the FBM KLCI
+  (`^KLSE`) instead of falling back to SPY (`tradingagents/default_config.py`, `benchmark_map`).
+- **`google_news_my` news vendor** (`tradingagents/dataflows/google_news_my.py`):
+  a keyless, MY-localized Google News RSS source that resolves a KLSE ticker
+  to its company name and aggregates The Edge Malaysia, The Star, NST,
+  Bernama and others — with genuine server-side date bounding, so historical
+  runs get point-in-time-correct results. Opt-in; the shipped default
+  (`yfinance`) is unchanged for everyone else. Enable it per run:
+  ```python
+  from tradingagents.dataflows.config import set_config
+  set_config({"data_vendors": {"news_data": "google_news_my"}})
+  # or with fallback: "google_news_my,yfinance"
+  ```
+- **Sentiment**: intentionally unchanged. Reddit/StockTwits already degrade to
+  an honest "no data" placeholder rather than fabricating discussion, and the
+  sentiment analyst already flags low confidence when a source is silent —
+  the safer choice for KLSE names than a brittle, Cloudflare-fighting scraper.
 
 ## TradingAgents Package
 
