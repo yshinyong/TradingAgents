@@ -211,15 +211,17 @@ the existing graceful-degradation behavior handle the rest:
 - **Regional alpha benchmark**: `.KL` tickers now resolve to the FBM KLCI
   (`^KLSE`) instead of falling back to SPY (`tradingagents/default_config.py`, `benchmark_map`).
 - **`google_news_my` news vendor** (`tradingagents/dataflows/google_news_my.py`):
-  a keyless, MY-localized Google News RSS source that resolves a KLSE ticker
-  to its company name and aggregates The Edge Malaysia, The Star, NST,
-  Bernama and others — with genuine server-side date bounding, so historical
-  runs get point-in-time-correct results. Opt-in; the shipped default
-  (`yfinance`) is unchanged for everyone else. Enable it per run:
+  a keyless, MY-localized Google News RSS source that resolves a ticker to its
+  company name and aggregates The Edge Malaysia, The Star, NST, Bernama and
+  others — with genuine server-side date bounding, so historical runs get
+  point-in-time-correct results. This is the **default `news_data` vendor on
+  this branch** (`"google_news_my,yfinance"` — tries the MY source first,
+  falls back to yfinance so non-KLSE tickers still get news), so both the CLI
+  and the Python API use it automatically; no config needed. To use yfinance
+  only (e.g. comparing behavior against upstream):
   ```python
-  from tradingagents.dataflows.config import set_config
-  set_config({"data_vendors": {"news_data": "google_news_my"}})
-  # or with fallback: "google_news_my,yfinance"
+  config = DEFAULT_CONFIG.copy()
+  config["data_vendors"] = {**config["data_vendors"], "news_data": "yfinance"}
   ```
 - **Sentiment**: intentionally unchanged. Reddit/StockTwits already degrade to
   an honest "no data" placeholder rather than fabricating discussion, and the
